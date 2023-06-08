@@ -1,2 +1,2 @@
 # RLSudoku
-Resolve using Reinforcement Learning
+Resolve Sudoku using Reinforcement Learning

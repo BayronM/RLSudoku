@@ -1,18 +1,22 @@
 class Sudoku:
-    def __init__(self, board):
-        self.board = board
+    def __init__(self,puzzle_string: str,solution_string: str):
+        self.puzzle_string = puzzle_string
+        self.board = self.create_board(puzzle_string)
+        self.solution = self.create_board(solution_string)
+
 
     def print_board(self):
-        for i in range(9):
+        for i in range(len(self.board)):
             if i % 3 == 0 and i != 0:
-                print("- - - - - - - - - - - -")
-            for j in range(9):
+                print("---------------------")
+            for j in range(len(self.board[0])):
                 if j % 3 == 0 and j != 0:
                     print(" | ", end="")
                 if j == 8:
                     print(self.board[i][j])
                 else:
                     print(str(self.board[i][j]) + " ", end="")
+        print("\n")
 
     def find_empty(self):
         for i in range(len(self.board)):
@@ -20,6 +24,10 @@ class Sudoku:
                 if self.board[i][j] == 0:
                     return (i, j)
         return None
+    
+    def set_number(self, number, pos):
+        self.board[pos[0]][pos[1]] = number
+        
 
     def valid(self, num, pos):
         # Check row
@@ -38,21 +46,28 @@ class Sudoku:
                 if self.board[i][j] == num and (i,j) != pos:
                     return False
         return True
+    
+    def create_board(self, puzzle_string: str):
+        board = []
+        for i in range(9):
+            board.append([])
+            for j in range(9):
+                board[i].append(int(puzzle_string[i*9+j]))
+        return board
+    
+    def solve_backtraking(self):
+        empty_cell = self.find_empty()
 
-# Test this environment
-board = [
-    [7,8,0,4,0,0,1,2,0],
-    [6,0,0,0,7,5,0,0,9],
-    [0,0,0,6,0,1,0,7,8],
-    [0,0,7,0,4,0,2,6,0],
-    [0,0,1,0,5,0,9,3,0],
-    [9,0,4,0,6,0,0,0,5],
-    [0,7,0,3,0,0,0,1,2],
-    [1,2,0,0,0,7,4,0,0],
-    [0,4,9,2,0,6,0,0,7]
-]
+        if not empty_cell:
+            return True
+        
+        for number in range(1, 10):
+            if self.valid(number, empty_cell):
+                self.set_number(number, empty_cell)
+                if self.solve_backtraking():
+                    return True
+                self.set_number(0, empty_cell)
 
-sudoku = Sudoku(board)
-sudoku.print_board()
-print(sudoku.find_empty())
-print(sudoku.valid(5, (0, 2)))
+        return False
+
+
