@@ -1,3 +1,6 @@
+import gymnasium as gym
+from gymnasium import spaces
+
 class Sudoku:
     def __init__(self,puzzle_string: str,solution_string: str):
         self.puzzle_string = puzzle_string
@@ -70,4 +73,47 @@ class Sudoku:
 
         return False
 
+
+class SudokuEnv(gym.Env):
+    def __init__(self, puzzle_string: str, solution_string: str):
+        super(SudokuEnv, self).__init__()
+
+        # Define action (row, column, number)
+        self.action_space = spaces.Tuple((spaces.Discrete(9), spaces.Discrete(9), spaces.Discrete(9)))
+        self.observation_space = spaces.Box(low=0, high=9, shape=(9,9))
+
+        self.puzzle_string = puzzle_string
+        self.solution_string = solution_string
+
+        self.sudoku = Sudoku(puzzle_string, solution_string)
+        self.solution = self.sudoku.solution
+        self.initial_board = self.sudoku.board.copy()
+
+    def step(self, action):
+        # action is a tuple of three elements (row, column, number)
+        row, column, number = action
+
+        if self.sudoku.valid(number, (row, column)) and self.initial_board[row][column] == 0:
+            self.sudoku.set_number(number, (row, column))
+
+            # Check if the board is solved
+            done = self.sudoku.board == self.solution
+
+            # give reward only if the board is solved 
+            if not done:
+                reward = number
+            else :
+                reward = 100
+        else:
+            reward = -1
+            done = False
+
+        return self.sudoku.board, reward, done, {}
+
+    def reset(self):
+        self.sudoku = Sudoku(self.puzzle_string, self.solution_string)
+        return self.sudoku.board
+
+    def render(self, mode='human'):
+        self.sudoku.print_board()
 
