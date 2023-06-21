@@ -162,3 +162,4 @@ cython_debug/
 
 ## SUDOKUS
 sudoku.csv
+sudoku_sorted.csv

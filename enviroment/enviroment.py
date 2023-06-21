@@ -1,4 +1,6 @@
 import gymnasium as gym
+import pandas as pd
+import numpy as np
 from gymnasium import spaces
 
 class Sudoku:
@@ -75,21 +77,24 @@ class Sudoku:
 
 
 class SudokuEnv(gym.Env):
-    def __init__(self, puzzle_string: str, solution_string: str):
+    def __init__(self,sudokus: pd.DataFrame):
         super(SudokuEnv, self).__init__()
 
         # Define action (row, column, number)
-        self.action_space = spaces.Tuple((spaces.Discrete(9), spaces.Discrete(9), spaces.Discrete(9)))
+        self.action_space = spaces.Tuple((spaces.Discrete(9), spaces.Discrete(9), spaces.Discrete(10)))
         self.observation_space = spaces.Box(low=0, high=9, shape=(9,9))
+        self.sudokus = sudokus
+        self.random_sudoku = self.sudokus.sample()
 
-        self.puzzle_string = puzzle_string
-        self.solution_string = solution_string
+        self.puzzle_string = self.random_sudoku["puzzle"].values[0]
+        self.solution_string = self.random_sudoku["solution"].values[0]
 
-        self.sudoku = Sudoku(puzzle_string, solution_string)
+        self.sudoku = Sudoku(self.puzzle_string,self.solution_string)
         self.solution = self.sudoku.solution
         self.initial_board = self.sudoku.board.copy()
+        self.actual_df_index = 0
 
-    def step(self, action):
+    def step(self, action,step=1):
         # action is a tuple of three elements (row, column, number)
         row, column, number = action
 
@@ -97,22 +102,30 @@ class SudokuEnv(gym.Env):
             self.sudoku.set_number(number, (row, column))
 
             # Check if the board is solved
-            done = self.sudoku.board == self.solution
+            done = np.all(self.sudoku.board == self.solution)
 
-            # give reward only if the board is solved 
-            if not done:
-                reward = number
+            # give reward if the move is valid and the number is correct
+            if self.sudoku.board[row][column] == self.solution[row][column]:
+                reward = 1
+                # extra reward if the board is solved
+                if done:
+                    reward += 100
             else :
-                reward = 100
+                reward = -1
         else:
             reward = -1
             done = False
 
-        return self.sudoku.board, reward, done, {}
+        return self.sudoku.board.copy(), reward, done, {}
 
     def reset(self):
-        self.sudoku = Sudoku(self.puzzle_string, self.solution_string)
-        return self.sudoku.board
+        self.puzzle_string = self.sudokus["puzzle"].values[self.actual_df_index]
+        self.solution_string = self.sudokus["solution"].values[self.actual_df_index]
+        self.sudoku = Sudoku(self.puzzle_string,self.solution_string)
+        self.solution = self.sudoku.solution
+        self.initial_board = self.sudoku.board.copy()
+        self.actual_df_index += 1
+        return self.sudoku.board.copy()
 
     def render(self, mode='human'):
         self.sudoku.print_board()

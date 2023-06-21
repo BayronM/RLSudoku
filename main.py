@@ -8,33 +8,31 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import time
 from enviroment.enviroment import Sudoku, SudokuEnv
+from agents.QLearningAgent import QLearningAgent
 
 
 def main():
     # read the sudokus from a csv file (https://www.kaggle.com/datasets/rohanrao/sudoku)
     #load the first 10000 sudokus
-    df_sudoku = pd.read_csv('sudoku.csv', nrows=10000)
-
-    env = SudokuEnv(df_sudoku['puzzle'][0], df_sudoku['solution'][0])
+    df_sudoku = pd.read_csv('sudoku_sorted.csv', nrows=10000)
     
-    done = False
-    reward = 0
-    observation= env.reset()
-
-    while not done:
-        env.render()
-        action = env.action_space.sample()
-        observation, reward, done, info = env.step(action)
-
-        print(f"Action: {action}")
-        print(f"Observation: {observation}")
-        print(f"Reward: {reward}")
-        print(f"Done: {done}")
-        print(f"Info: {info}")
-        print("")
+    env = SudokuEnv(df_sudoku)
+    agent = QLearningAgent(env)
     
-    env.close()
+    # train the agent
+    agent.train(5000)
 
+    # test the agent
+    state = env.reset()
+    env.render()
+    for step in range(10000):
+        action = agent.choose_action(state)
+        new_state, reward, done, info = env.step(action)
+        state = new_state
+
+        if done:
+            break
+    env.render()
 
 
 
