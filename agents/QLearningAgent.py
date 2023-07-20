@@ -2,9 +2,14 @@ import numpy as np
 from gymnasium import spaces
 
 class QLearningAgent:
-    def __init__(self, env):
+    def __init__(self, env, resume_training=False):
         self.env = env
         self.q_table = {}
+        try:
+            if resume_training:
+                self.q_table = np.load('q_table.npy', allow_pickle=True).item()
+        except FileNotFoundError:
+            print('No q_table found. Starting from scratch.')
         self.alpha = 0.5  # Learning rate
         self.gamma = 0.95  # Discount factor
         self.epsilon = 0.1  # Exploration rate
@@ -12,7 +17,7 @@ class QLearningAgent:
     def get_state_key(self, state):
         return str(state)
 
-    def choose_action(self, state):
+    def select_action(self, state):
         if np.random.uniform(0, 1) < self.epsilon:
             # Explore action space
             while True:
@@ -49,13 +54,34 @@ class QLearningAgent:
             state = self.env.reset()
             done = False
             step = 0
-            while not done and step < 1000:
-                action = self.choose_action(state)
+            while not done and step < 162:
+                action = self.select_action(state)
                 new_state, reward, done, info = self.env.step(action,step)
                 self.update_q_table(state, action, reward, new_state)
                 state = new_state
                 step += 1
                 if done:
+                    print(f"solution found in {step} steps")
+                    self.env.render()
+                    break
+            if episode % 100 == 0:
+                self.save_qtable()
+    def save_qtable(self):
+        np.save("qtable.npy", self.q_table)
+    def load_qtable(self):
+        self.q_table = np.load("qtable.npy", allow_pickle=True).item()
+    def test(self, episodes):
+        for episode in range(episodes):
+            print(f"Episode {episode + 1} of {episodes}")
+            state = self.env.reset(random=True)
+            done = False
+            step = 0
+            while not done and step < 162:
+                action = self.choose_action(state)
+                new_state, reward, done, info = self.env.step(action,step)
+                state = new_state
+                step += 1
+                if done: 
                     print(f"solution found in {step} steps")
                     self.env.render()
                     break

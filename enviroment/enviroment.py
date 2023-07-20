@@ -30,6 +30,14 @@ class Sudoku:
                     return (i, j)
         return None
     
+    def find_all_empty(self):
+        empty_cells = []
+        for i in range(len(self.board)):
+            for j in range(len(self.board[0])):
+                if self.board[i][j] == 0:
+                    empty_cells.append((i, j))
+        return empty_cells
+    
     def set_number(self, number, pos):
         self.board[pos[0]][pos[1]] = number
         
@@ -81,7 +89,8 @@ class SudokuEnv(gym.Env):
         super(SudokuEnv, self).__init__()
 
         # Define action (row, column, number)
-        self.action_space = spaces.Tuple((spaces.Discrete(9), spaces.Discrete(9), spaces.Discrete(10)))
+        self.action_space = spaces.Tuple((spaces.Discrete(9), spaces.Discrete(9), spaces.Discrete(9)))
+        self.action_space.n = 729
         self.observation_space = spaces.Box(low=0, high=9, shape=(9,9))
         self.sudokus = sudokus
         self.random_sudoku = self.sudokus.sample()
@@ -118,10 +127,15 @@ class SudokuEnv(gym.Env):
 
         return self.sudoku.board.copy(), reward, done, {}
 
-    def reset(self):
-        self.puzzle_string = self.sudokus["puzzle"].values[self.actual_df_index]
-        self.solution_string = self.sudokus["solution"].values[self.actual_df_index]
-        self.sudoku = Sudoku(self.puzzle_string,self.solution_string)
+    def reset(self,random=False):
+        if random:
+            self.random_sudoku = self.sudokus.sample()
+            self.puzzle_string = self.random_sudoku["puzzle"].values[0]
+            self.solution_string = self.random_sudoku["solution"].values[0]
+        else:   
+            self.puzzle_string = self.sudokus["puzzle"].values[self.actual_df_index]
+            self.solution_string = self.sudokus["solution"].values[self.actual_df_index]
+            self.sudoku = Sudoku(self.puzzle_string,self.solution_string)
         self.solution = self.sudoku.solution
         self.initial_board = self.sudoku.board.copy()
         self.actual_df_index += 1
