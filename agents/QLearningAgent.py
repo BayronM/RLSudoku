@@ -54,8 +54,8 @@ class QLearningAgent:
             state = self.env.reset()
             done = False
             step = 0
-            while not done and step < 1000:
-                action = self.choose_action(state)
+            while not done and step < 162:
+                action = self.select_action(state)
                 new_state, reward, done, info = self.env.step(action,step)
                 self.update_q_table(state, action, reward, new_state)
                 state = new_state
@@ -76,7 +76,7 @@ class QLearningAgent:
             state = self.env.reset(random=True)
             done = False
             step = 0
-            while not done and step < 1000:
+            while not done and step < 162:
                 action = self.choose_action(state)
                 new_state, reward, done, info = self.env.step(action,step)
                 state = new_state

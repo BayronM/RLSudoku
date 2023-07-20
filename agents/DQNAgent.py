@@ -48,7 +48,7 @@ class DQNAgent():
         self.env = env
         self.gamma = 0.99
         self.epsilon_start = 0.9
-        self.epsilon_end = 0.05
+        self.epsilon_end = 0.5
         self.epsilon_decay = 1000
         self.batch_size = 64
         self.tau = 0.005
@@ -113,23 +113,22 @@ class DQNAgent():
 
         
     def train(self, num_episodes=100):
+        done = False
         for i_episode in range(num_episodes):
             print("Episode: ", i_episode)
-            state = torch.tensor(self.env.reset(), device=device, dtype=torch.float)
+            if done:  
+                state = torch.tensor(self.env.reset(), device=device, dtype=torch.float)
+            else:
+                state = torch.tensor(self.env.sudoku.board.copy(), device=device, dtype=torch.float)
             state = state.view(1, 9*9)  # Reshape the state tensor
             done = False
             step = 0
-            while not done and step < 1000:
+            while not done and step < 100:
                 # select and perform action
-                while True:
-                    action = self.select_action(state)
-                    action_value = action[2]+1
-                    next_state, reward, done, _ = self.env.step((action[0], action[1], action_value))
-                    
-                    #only choose empty cells to fill
-                    if next_state[action[0]][action[1]] == 0:
-                        break
-                print(f"action: {action}, reward: {reward}")
+                action = self.select_action(state)
+                action_value = action[2]+1
+                
+                next_state, reward, done, _ = self.env.step((action[0], action[1], action_value))
                 # observe new state
                 next_state = torch.tensor(next_state, device=device, dtype=torch.float)
                 next_state = next_state.view(1, 9*9)  # Reshape the next_state tensor
@@ -144,12 +143,12 @@ class DQNAgent():
                 # Perform one step of the optimization (on the target network)
                 self.optimize_model()
                 step += 1
+                
                 if done:
                     print(f"solution found in {step} steps")
                     self.env.render()
                     break
-            # Update the target network
-            if i_episode % 10 == 0:
+            if i_episode % 100 == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
                 print("Target network updated")
     
